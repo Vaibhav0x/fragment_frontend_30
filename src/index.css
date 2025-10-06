@@ -11,3 +11,22 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.App {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+textarea {
+  width: 100%;
+  font-family: monospace;
+}
+
+button {
+  margin-top: 10px;
+}
+
+pre {
+  background: #eee;
+  padding: 10px;
+}
