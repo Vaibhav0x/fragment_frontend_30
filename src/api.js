@@ -28,7 +28,18 @@ console.log('Using headers:', headers);
 export async function createFragment(content, type = 'text/plain') {
     try {
         console.log('Making request with headers:', headers);
-        const res = await axios.post(`${API_URL}/v1/fragments`, content, {
+        console.log('API_URL:', API_URL);
+        console.log('Creating fragment with type:', type);
+
+        let dataToSend = content;
+
+        // Handle File objects (for images)
+        if (content instanceof File) {
+            console.log('Converting File to ArrayBuffer');
+            dataToSend = await content.arrayBuffer();
+        }
+
+        const res = await axios.post(`${API_URL}/v1/fragments`, dataToSend, {
             headers: { ...headers, 'Content-Type': type },
         });
         console.log('Response data:', res.data);
@@ -36,7 +47,8 @@ export async function createFragment(content, type = 'text/plain') {
     } catch (error) {
         console.error('Request error:', {
             config: error.config,
-            response: error.response?.data
+            response: error.response?.data,
+            status: error.response?.status
         });
         throw error;
     }
@@ -67,8 +79,54 @@ export async function getFragmentData(id, format) {
     });
     console.log('Fragment data response headers:', res.headers);
     console.log('Fragment data response data:', res.data);
+    const contentType = res.headers['content-type'];
+
+    // For images, return a blob URL; for text, decode as string
+    if (contentType && contentType.startsWith('image/')) {
+        const blob = new Blob([res.data], { type: contentType });
+        const blobUrl = URL.createObjectURL(blob);
+        return {
+            data: blobUrl,
+            contentType: contentType,
+            isImage: true
+        };
+    }
+
+    // For text content, decode to string
     return {
         data: new TextDecoder().decode(res.data),
-        contentType: res.headers['content-type']
+        contentType: contentType,
+        isImage: false
     };
+}
+
+export async function updateFragment(id, content, type = 'text/plain') {
+    try {
+        console.log('Updating fragment:', id, 'with type:', type);
+        const res = await axios.put(`${API_URL}/v1/fragments/${id}`, content, {
+            headers: { ...headers, 'Content-Type': type },
+        });
+        console.log('Update response:', res.data);
+        return res.data;
+    } catch (error) {
+        console.error('Error updating fragment:', {
+            response: error.response?.data,
+            status: error.response?.status
+        });
+        throw error;
+    }
+}
+
+export async function deleteFragment(id) {
+    try {
+        console.log('Deleting fragment:', id);
+        await axios.delete(`${API_URL}/v1/fragments/${id}`, { headers });
+        console.log('Fragment deleted successfully');
+    } catch (error) {
+        console.error('Error deleting fragment:', {
+            response: error.response?.data,
+            status: error.response?.status
+        });
+        throw error;
+    }
 }
